@@ -5,11 +5,33 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+#Header only easy_grid library
+add_library(easy_grid INTERFACE)
+target_include_directories(easy_grid INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(easy_grid INTERFACE
+  Eigen3::Eigen
+)
+
+install(DIRECTORY include/ DESTINATION include)
+
+install(TARGETS easy_grid
+  EXPORT export_easy_grid
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+ament_export_targets(export_easy_grid)
+ament_export_dependencies(ament_cmake Eigen3)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

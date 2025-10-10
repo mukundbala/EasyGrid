@@ -8,6 +8,9 @@
 #include <array>
 #include <optional>
 #include <unordered_set>
+#include <cmath>
+#include <type_traits>
+#include <algorithm>
 
 /*
 Easy Grid is a simple, header only implementation for handling grids
@@ -414,7 +417,7 @@ namespace easy_grid
          * @param CellT cell
          * @warning No bounds checking, bounds overflow will throw
          */
-        void setCell(Eigen::Vector2d &world_coord, const CellT &cell);
+        void setCell(Eigen::Vector2d &parent_coord, const CellT &cell);
 
         /**
          * @brief Set cells with values.
@@ -593,7 +596,7 @@ namespace easy_grid
             size_t width = getWidth();
             size_t height = getHeight();
             size_t metadata_total_size = width * height;
-            if (metadata_total_size != cells.size())
+            if (metadata_total_size != grid_cells.size())
             {
                 throw std::runtime_error("GridHandler::setGrid: Invalid number of cells provided");
                 return;
@@ -606,8 +609,8 @@ namespace easy_grid
         void GridHandler<CellT>::setMetaData(MetaData meta) 
         {
             meta_ = meta;
-            this->clearAndDeallocGrid();
-            grid_.assign(meta_.map_width * meta_.map_height,CellT());
+            clearAndDeallocGrid();
+            grid_cells_.assign(meta_.map_width * meta_.map_height,CellT());
         }
 
         template <class CellT>
@@ -629,7 +632,7 @@ namespace easy_grid
         template <class CellT>
         void GridHandler<CellT>::clearGrid()
         {
-            grid_.clear();
+            grid_cells_.clear();
         }
 
         template <class CellT>
@@ -980,9 +983,9 @@ namespace easy_grid
     }
 
     template <class CellT>
-    void GridHandler<CellT>::setCell(Eigen::Vector2d &world_coord, const CellT &cell)
+    void GridHandler<CellT>::setCell(Eigen::Vector2d &parent_coord, const CellT &cell)
     {
-        Eigen::Vector2i grid_coord = this->worldToGrid(world_coord);
+        Eigen::Vector2i grid_coord = this->parentToGrid(parent_coord);
         setCell(grid_coord, cell);
     }
 
@@ -1018,7 +1021,7 @@ namespace easy_grid
         else
         {
             //Apply to all the indices
-            for (size_t index = 0 ; index < grid_.size() ; ++index)
+            for (size_t index = 0 ; index < grid_cells_.size() ; ++index)
             {
                 Eigen::Vector2i grid_coord = this->indexToGrid(index);
                 visitor(grid_coord);
@@ -1031,8 +1034,8 @@ namespace easy_grid
     void GridHandler<CellT>::RayIterator(const Eigen::Vector2d& origin_point,
                                         const Eigen::Vector2d& end_point, bool include_end, VisitorFunction&& visitor_func)
     {
-        Eigen::Vector2i src =  this->worldToGrid(origin_point);
-        Eigen::Vector2i dest = this->worldToGrid(end_point);
+        Eigen::Vector2i src =  this->parentToGrid(origin_point);
+        Eigen::Vector2i dest = this->parentToGrid(end_point);
         
         //Same point, just return
         if (src == dest)
@@ -1312,7 +1315,7 @@ namespace easy_grid
                 //Return if outOfBound
                 if (this->outOfBound(pt)) return;
                 //Convert pt to world
-                Eigen::Vector2d pt_world = this->gridToWorld(pt);
+                Eigen::Vector2d pt_world = this->gridToParent(pt);
                 //Return if not in polygon
                 if (!this->pointInPolygon(pt_world, polygon,true)) return;
                 //Apply visitor only if in polygon and in bounds of the map
