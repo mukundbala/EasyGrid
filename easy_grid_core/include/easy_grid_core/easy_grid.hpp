@@ -60,8 +60,22 @@ namespace easy_grid
         double resolution {0.1}; //m
         size_t map_width  {100}; //num_cells
         size_t map_height {100}; //num_cells
-        Eigen::Matrix3d map_frame_transform = Eigen::Matrix3d::Identity(); //wTm
+        Eigen::Matrix4d map_frame_transform = Eigen::Matrix4d::Identity(); //wTm
+
+        // Set Transform
+        void set_transform(Eigen::Vector3d &translation, Eigen::Quaterniond &rotation);
+        // Get the transformation as 7d x,y,z,qx,qy,qz,qw
+        Eigen::VectorXd get_transform_as_vec() const;
+        // Get the transformation as Matrix4d
+        Eigen::Matrix4d get_transform_as_mat() const;
+        // Get Translation
+        Eigen::Vector3d get_translation() const;
+        // Get Rotation rotation matrix
+        Eigen::Matrix3d get_rotation_as_matrix() const;
+        // Get Rotation as Quaternion
+        Eigen::Quaterniond get_rotation_as_quat() const;
     };
+    
 
     template <class CellT>
     class GridHandler
@@ -191,11 +205,11 @@ namespace easy_grid
         [[nodiscard]] size_t getHeight() const noexcept;
 
         /**
-         * @brief Get the SE2 transform of the grid in parent frame
-         * @return Eigen::Matrix3d SE2 transformation
+         * @brief Get the SE3 transform of the grid in parent frame
+         * @return Eigen::Matrix4d SE3 transformation
          * @see easy_grid::MetaData
          */
-        [[nodiscard]] Eigen::Matrix3d getMapTransform() const noexcept;
+        [[nodiscard]] Eigen::Matrix4d getMapTransform() const noexcept;
 
         /**
          * @brief Get the translation from of the grid in parent frame
@@ -525,6 +539,70 @@ namespace easy_grid
         }};
         
     };
+    /*
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////IMPLEMENTATION///////////////////////////////////////////////////////
+    //////////////////////////////////////////easy_grid::Metadata////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    */
+    inline void MetaData::set_transform(Eigen::Vector3d &translation, Eigen::Quaterniond &rotation)
+    {
+        // Ensure rotation is normalized to avoid drift
+        if (std::abs(rotation.norm() - 1.0) > 1e-9)
+            rotation.normalize();
+
+        map_frame_transform = Eigen::Matrix4d::Identity();
+        map_frame_transform.topLeftCorner<3,3>() = rotation.toRotationMatrix(); // Rotation block
+        map_frame_transform.topRightCorner<3,1>() = translation;    
+    }
+
+
+    inline Eigen::VectorXd MetaData::get_transform_as_vec() const
+    {
+        /**
+         * @brief Returns [x, y, z, qx, qy, qz, qw] as a 7D vector.
+         */
+        Eigen::Vector3d t = get_translation();
+        Eigen::Quaterniond q = get_rotation_as_quat();
+
+        Eigen::VectorXd vec(7);
+        vec << t.x(), t.y(), t.z(), q.x(), q.y(), q.z(), q.w();
+        return vec;
+    }
+
+    inline Eigen::Matrix4d MetaData::get_transform_as_mat() const
+    {
+        /**
+         * @brief Returns the full 4x4 homogeneous transform.
+         */
+        return map_frame_transform;
+    }
+
+    inline Eigen::Vector3d MetaData::get_translation() const
+    {
+        /**
+         * @brief Extracts translation (x, y, z) from the 4x4 matrix.
+         */
+        return map_frame_transform.topRightCorner<3,1>();
+    }
+
+    inline Eigen::Matrix3d MetaData::get_rotation_as_matrix() const
+    {
+        /**
+         * @brief Extracts rotation matrix (3x3) from the 4x4 transform.
+         */
+        return map_frame_transform.topLeftCorner<3,3>();
+    }
+
+    inline Eigen::Quaterniond MetaData::get_rotation_as_quat() const
+    {
+        /**
+         * @brief Returns rotation as quaternion.
+         */
+        Eigen::Matrix3d R = get_rotation_as_matrix();
+        return Eigen::Quaterniond(R);
+    }
 
     /*
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -658,43 +736,18 @@ namespace easy_grid
     size_t GridHandler<CellT>::getHeight() const noexcept {return meta_.map_height;}
 
     template <class CellT>
-    Eigen::Matrix3d GridHandler<CellT>::getMapTransform() const noexcept {return meta_.map_frame_transform;}
+    Eigen::Matrix4d GridHandler<CellT>::getMapTransform() const noexcept {return meta_.map_frame_transform;}
 
     template <class CellT>
     Eigen::Vector3d GridHandler<CellT>::getMapTranslation() const noexcept
     {
-        /*
-        Rxx Ryx Tx 
-        Rxy Ryy Ty
-        0   0   1
-        */
-        Eigen::Matrix3d WTM = getMapTransform();
-        return Eigen::Vector3d{WTM(0,2), WTM(1,2), 0};      
+        return this->meta_.get_translation();
     }
 
     template <class CellT>
     Eigen::Quaterniond GridHandler<CellT>::getMapRotation() const noexcept
     {
-        /*
-        rxx ryx tx 
-        rxy ryy ty
-        0   0   1
-        */
-        Eigen::Matrix3d WTM = getMapTransform();
-        
-        /*
-        Rxx=rxx Ryx=ryx Rzx=0  
-        Rxy=rxy Ryy=ryy Rzy=0
-        Rxz=0   Ryz=0   Rzz=1
-        */
-        Eigen::Matrix3d R3D = Eigen::Matrix3d::Identity();
-
-        R3D(0, 0) = WTM(0, 0);
-        R3D(0, 1) = WTM(0, 1);
-        R3D(1, 0) = WTM(1, 0);
-        R3D(1, 1) = WTM(1, 1);
-
-        return Eigen::Quaterniond(R3D);
+        return this->meta_.get_rotation_as_quat();   
     }
 
     template <class CellT>
@@ -721,20 +774,20 @@ namespace easy_grid
         //Which is equivalent to MP = (WTM)^-1 * WP, where WTM is a 3x3 matrix gotten from grid.map_tf()
 
         //Get the map wrt to world frame transform
-        auto WTM = getMapTransform();
+        auto WTM = getMapTransform(); //4x4 matrix
         //Invert it to bring points from world frame to map frame
         auto MTW = WTM.inverse();
         
         //Get the world frame
-        Eigen::Vector3d WP_3 {parent_coord.x(),parent_coord.y(),1.0};
+        Eigen::Vector4d WP_4 {parent_coord.x(),parent_coord.y(),0.0,1.0};
         //Do MP = MTW * WP
-        Eigen::Vector3d MP_3 = MTW * WP_3;
+        Eigen::Vector4d MP_4 = MTW * WP_4;
         
         //And finally, convert it to grid coordiate
         double res = getResolution();
         //Logical grid (u,v) wjere u -> +x (right) and v -> +y (up), origin at bottom left
-        int u = static_cast<int>(std::floor(MP_3.x() / res));
-        int v = static_cast<int>(std::floor(MP_3.y() / res));
+        int u = static_cast<int>(std::floor(MP_4(0) / res));
+        int v = static_cast<int>(std::floor(MP_4(1) / res));
         
         return {u,v};
     }
@@ -750,15 +803,17 @@ namespace easy_grid
         double res = getResolution();
         
         //Get the transformation
-        Eigen::Matrix3d WTM = getMapTransform();
+        Eigen::Matrix4d WTM = getMapTransform(); //4x4
 
-        Eigen::Vector3d MP_3{(static_cast<double>(u) + 0.5) * res, //returns the cell center position
-                                (static_cast<double>(v) + 0.5) * res, 
-                                1.0};
+        Eigen::Vector4d MP_4{  (static_cast<double>(u) + 0.5) * res, //returns the cell center position
+                               (static_cast<double>(v) + 0.5) * res,
+                                                 0.0,
+                                                 1.0
+                            };
         //WP = WTM * MP
-        Eigen::Vector3d WP_3 = WTM * MP_3;
+        Eigen::Vector4d WP_4 = WTM * MP_4;
 
-        return {WP_3.x(),WP_3.y()};
+        return {WP_4(0),WP_4(1)};
     }
 
     template <class CellT>
@@ -1239,7 +1294,7 @@ namespace easy_grid
                             Eigen::Vector2i diff = pt - center_grid;
                             //Compute the squared euc distance in cell coordinate
                             int dist_sq = diff.x() * diff.x() + diff.y() * diff.y();
-                            if (dist_sq <= radius_sq)
+                            if (dist_sq < radius_sq)
                             {
                                 //If its less than or equal to the radius diff, its inside the circle
                                 //So we can apply the visitor func
@@ -1257,7 +1312,7 @@ namespace easy_grid
         size_t num_vertices = polygon.size();
 
         //Return if its less than 3
-        if (num_vertices < 2) {return;}
+        if (num_vertices < 3) {return;}
 
         std::unordered_set<size_t> deduplicator;
         //We start at index 0, and assume index 0 and index 1 have an edge, 1 and 2 have an edge, ... n-1 and n have an edge
