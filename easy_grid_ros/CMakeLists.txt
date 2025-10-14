@@ -15,7 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -41,6 +41,11 @@ install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install rviz files
+install(DIRECTORY rviz
+  DESTINATION share/${PROJECT_NAME}
+)
+
 # Install include
 install(DIRECTORY include
   DESTINATION include/${PROJECT_NAME}
@@ -55,9 +60,8 @@ install(TARGETS
 ament_target_dependencies(easy_grid_demo
   rclcpp
   geometry_msgs
+  visualization_msgs
   nav_msgs
-  std_msgs
-  sensor_msgs
   tf2_ros
   tf2
   tf2_geometry_msgs
@@ -66,9 +70,8 @@ ament_target_dependencies(easy_grid_demo
 ament_export_dependencies(
   rclcpp
   geometry_msgs
+  visualization_msgs
   nav_msgs
-  std_msgs
-  sensor_msgs
   tf2_ros
   tf2
   tf2_geometry_msgs

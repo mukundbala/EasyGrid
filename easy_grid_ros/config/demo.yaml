@@ -3,7 +3,10 @@ easy_grid_demo:
     resolution: 0.1
     map_width: 200
     map_height: 200
-    map_translation: [0,0,0] #x,y,z
-    map_rotation: [0,0,0,1] #qx,qy,qz,qw
+    map_translation: [4.0,4.0,0.0] #x,y,z relative to map frame
+    map_rotation: [0.0,0.0,0.0,1.0] #qx,qy,qz,qw relative to map frame
     mode: 0 #0: Ray Iterator, 1: SubMapIterator, 2: CirclePerimeterIterator, 3: CircleAreaIterator, 4: PolygonPerimeterIterator, 5: PolygonAreaIterator
     default_radius: 2.0 #m radius for circle related iterators
+    default_vertices: 5
+    default_submap_width: 5
+    default_submap_height: 5
