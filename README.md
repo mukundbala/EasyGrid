@@ -303,10 +303,10 @@ const auto setter_func = [&](Eigen::Vector2i &grid_coord)
                             to_set.occupancy = 100;
                             my_map.setCell(grid_coord,to_set)
                         }
-Eigen::Vector2d center1(100.0,100.0);
-Eigen::Vector2d center2(50.0,50.0);
-double radius = 10.0 #m
+//Lets assume these vectors contain vertices of a polygon in clockwise/anticlockwise order. Note that it is an open polygon, which means first point != last point
+std::vector<Eigen::Vector2d> polygon1;
+std::vector<Eigen::Vector2d> polygon2;
 
-my_map.CirclePerimeterIterator(center1,radius,setter);
-my_map.CircleAreaIterator(center2,radius,setter);
+my_map.PolygonPerimeterIterator(polygon1,setter_func);
+my_map.PolygonAreaIterator(polygon2,setter_func);
 ```
