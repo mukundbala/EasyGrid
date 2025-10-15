@@ -259,7 +259,7 @@ const auto setter_func = [&](Eigen::Vector2i &grid_coord)
                         }
 Eigen::Vector2d start(1.0,1.0);
 Eigen::Vector2d goal(10.0,10.0);
-my_map.RayIterator(start,goal,setter);
+my_map.RayIterator(start,goal,setter_func);
 ```
 
 ### SubMapIterator
@@ -274,7 +274,7 @@ const auto setter_func = [&](Eigen::Vector2i &grid_coord)
 Eigen::Vector2d topleft(100.0,100.0);
 submap_width = 100 //in number of cells
 submap_height = 50 //in number of cells
-my_map.RayIterator(top_left,submap_width,submp_height,setter);
+my_map.RayIterator(top_left,submap_width,submp_height,setter_func);
 ```
 
 ### CirclePerimeterIterator & CircleAreaIterator
@@ -290,8 +290,8 @@ Eigen::Vector2d center1(100.0,100.0);
 Eigen::Vector2d center2(50.0,50.0);
 double radius = 10.0 #m
 
-my_map.CirclePerimeterIterator(center1,radius,setter);
-my_map.CircleAreaIterator(center2,radius,setter);
+my_map.CirclePerimeterIterator(center1,radius,setter_func);
+my_map.CircleAreaIterator(center2,radius,setter_func);
 ```
 
 ### PolygonPerimeterIterator & PolygonAreaIterator
