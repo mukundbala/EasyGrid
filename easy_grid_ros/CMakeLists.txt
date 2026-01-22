@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 project(easy_grid_ros)
 
 
@@ -30,7 +30,10 @@ target_include_directories(easy_grid_demo
     PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 
-target_link_libraries(easy_grid_demo easy_grid_core::easy_grid)
+target_link_libraries(easy_grid_demo
+  easy_grid_core::easy_grid_core
+)
+
 
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}

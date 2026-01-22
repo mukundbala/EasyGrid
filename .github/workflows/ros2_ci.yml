@@ -1,0 +1,62 @@
+name: ROS2 Jazzy CI
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    container:
+      image: ros:jazzy-ros-base
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            libeigen3-dev \
+            ros-jazzy-tf2 \
+            ros-jazzy-tf2-ros \
+            ros-jazzy-tf2-geometry-msgs \
+            ros-jazzy-geometry-msgs \
+            ros-jazzy-nav-msgs \
+            ros-jazzy-visualization-msgs
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Create workspace and copy source
+        run: |
+          mkdir -p /ros2_ws/src
+          cp -r $GITHUB_WORKSPACE/* /ros2_ws/src/
+
+      - name: Build packages
+        working-directory: /ros2_ws
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build \
+            --packages-up-to easy_grid_ros \
+            --cmake-args -DBUILD_TESTING=ON \
+            --event-handlers console_direct+
+
+      - name: Run tests
+        working-directory: /ros2_ws
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          colcon test \
+            --packages-select easy_grid_core \
+            --event-handlers console_direct+
+          
+      - name: Show test results
+        if: always()
+        working-directory: /ros2_ws
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon test-result --all --verbose
