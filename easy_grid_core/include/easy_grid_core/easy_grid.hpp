@@ -622,7 +622,6 @@ namespace easy_grid
         : meta_(meta)
         {
             //Default Populate
-            grid_cells_.reserve(meta_.map_width * meta_.map_height);
             grid_cells_.assign(meta_.map_width * meta_.map_height,CellT());
             
         }
@@ -697,6 +696,10 @@ namespace easy_grid
             size_t TOTAL_CELLS = this->getTotalCells();
             std::vector<CellT> underlying;
             underlying.reserve(TOTAL_CELLS);
+
+            for (const auto & cell : this->grid_cells_){
+                underlying.push_back(cell);
+            }
             
             GridHandler cloned_grid(this->meta_,underlying);
             return cloned_grid;
@@ -818,11 +821,7 @@ namespace easy_grid
         int v = grid_coord.y();
         
         size_t width = getWidth();
-
-        if (u < 0 | v < 0){
-            throw std::runtime_error("GridToIndex failed because either grid coordinate component is negative. Do bounds checking before conversion!");
-        }
-
+        
         return static_cast<size_t>(v) * width + static_cast<size_t>(u);
     }
 
