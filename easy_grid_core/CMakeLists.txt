@@ -60,15 +60,15 @@ if(BUILD_TESTING)
   )
   target_link_libraries(easy_grid_conversion_test easy_grid)
   
-  # ament_add_gtest(easy_grid_bounds_test
-  #   test/easy_grid_bounds_test.cpp
-  # )
-  # target_link_libraries(easy_grid_bounds_test easy_grid)
+  ament_add_gtest(easy_grid_bounds_test
+    test/easy_grid_bounds_test.cpp
+  )
+  target_link_libraries(easy_grid_bounds_test easy_grid)
   
-  # ament_add_gtest(easy_grid_cell_access_test
-  #   test/easy_grid_cell_access_test.cpp
-  # )
-  # target_link_libraries(easy_grid_cell_access_test easy_grid)
+  ament_add_gtest(easy_grid_cell_access_test
+    test/easy_grid_cell_access_test.cpp
+  )
+  target_link_libraries(easy_grid_cell_access_test easy_grid)
   
   # ament_add_gtest(easy_grid_iterator_test
   #   test/easy_grid_iterator_test.cpp
