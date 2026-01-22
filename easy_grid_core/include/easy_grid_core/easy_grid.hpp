@@ -821,11 +821,7 @@ namespace easy_grid
         int v = grid_coord.y();
         
         size_t width = getWidth();
-
-        if (u < 0 | v < 0){
-            throw std::runtime_error("GridToIndex failed because either grid coordinate component is negative. Do bounds checking before conversion!");
-        }
-
+        
         return static_cast<size_t>(v) * width + static_cast<size_t>(u);
     }
 

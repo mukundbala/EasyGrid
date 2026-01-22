@@ -222,6 +222,7 @@ TEST_F(GridHandlerConstructorTest, MoveAssignment_SelfAssignmentIsSafe) {
     grid.getCell(0).value = 42;
     grid.getCell(50).value = 100;
     
+    // Yes i know its a self move, but its done safely...
     grid = std::move(grid);
     
     // Grid should still be valid after self-assignment

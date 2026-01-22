@@ -55,13 +55,10 @@ if(BUILD_TESTING)
     easy_grid
   )
 
-  # ---------------------------------------------------------------------------
-  # Future tests can be added here following the same pattern:
-  # ---------------------------------------------------------------------------
-  # ament_add_gtest(easy_grid_conversion_test
-  #   test/easy_grid_conversion_test.cpp
-  # )
-  # target_link_libraries(easy_grid_conversion_test easy_grid)
+  ament_add_gtest(easy_grid_conversion_test
+    test/easy_grid_conversion_test.cpp
+  )
+  target_link_libraries(easy_grid_conversion_test easy_grid)
   
   # ament_add_gtest(easy_grid_bounds_test
   #   test/easy_grid_bounds_test.cpp
