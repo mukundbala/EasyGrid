@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           rosdep install \
-            --from-paths src \
+            --from-paths ws/src/EasyGrid \
             --ignore-src \
             --rosdistro jazzy \
             -y
