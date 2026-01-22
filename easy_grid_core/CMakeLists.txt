@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-#Header only easy_grid library
+# Header only easy_grid library
 add_library(easy_grid INTERFACE)
 target_include_directories(easy_grid INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -22,7 +22,6 @@ target_link_libraries(easy_grid INTERFACE
 )
 
 install(DIRECTORY include/ DESTINATION include)
-
 install(TARGETS easy_grid
   EXPORT export_easy_grid
   ARCHIVE DESTINATION lib
@@ -35,14 +34,55 @@ ament_export_dependencies(ament_cmake Eigen3)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
+  find_package(ament_cmake_gtest REQUIRED)
+  
+  # Skip copyright and cpplint for now
   set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  ament_add_gtest(easy_grid_metadata_test
+    test/easy_grid_metadata_test.cpp
+  )
+  target_link_libraries(easy_grid_metadata_test
+    easy_grid
+  )
+
+  ament_add_gtest(easy_grid_constructor_test
+    test/easy_grid_constructor_test.cpp
+  )
+  target_link_libraries(easy_grid_constructor_test
+    easy_grid
+  )
+
+  # ---------------------------------------------------------------------------
+  # Future tests can be added here following the same pattern:
+  # ---------------------------------------------------------------------------
+  # ament_add_gtest(easy_grid_conversion_test
+  #   test/easy_grid_conversion_test.cpp
+  # )
+  # target_link_libraries(easy_grid_conversion_test easy_grid)
+  
+  # ament_add_gtest(easy_grid_bounds_test
+  #   test/easy_grid_bounds_test.cpp
+  # )
+  # target_link_libraries(easy_grid_bounds_test easy_grid)
+  
+  # ament_add_gtest(easy_grid_cell_access_test
+  #   test/easy_grid_cell_access_test.cpp
+  # )
+  # target_link_libraries(easy_grid_cell_access_test easy_grid)
+  
+  # ament_add_gtest(easy_grid_iterator_test
+  #   test/easy_grid_iterator_test.cpp
+  # )
+  # target_link_libraries(easy_grid_iterator_test easy_grid)
+  
+  # ament_add_gtest(easy_grid_polygon_test
+  #   test/easy_grid_polygon_test.cpp
+  # )
+  # target_link_libraries(easy_grid_polygon_test easy_grid)
+
 endif()
 
 ament_package()
