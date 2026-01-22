@@ -162,11 +162,10 @@ namespace easy_grid
         void setMetaData(MetaData meta);
 
         /**
-         * @brief Creates a copy of an existing grid and returns the grid
-         * @param GridHandler& other_grid The grid to copy
+         * @brief Creates a copy of the existing grid
          * @return GridHandler Copy of other_grid
          */
-        GridHandler cloneGrid(GridHandler &other_grid);
+        GridHandler cloneGrid();
         
         /**
          * @brief Clears the grid, however space remains allocated
@@ -202,7 +201,7 @@ namespace easy_grid
          * @return size_t height of the grid
          * @see easy_grid::MetaData
          */
-        [[nodiscard]] size_t getHeight() const noexcept;
+        [[nodiscard]] size_t getHeight()    const noexcept;
 
         /**
          * @brief Get the SE3 transform of the grid in parent frame
@@ -289,7 +288,7 @@ namespace easy_grid
          * @return true if out of bounds
          * @return false if in bounds
          */
-        [[nodiscard]] bool outOfBound(Eigen::Vector2d &test_coord) const noexcept;
+        [[nodiscard]] bool outOfBound(const Eigen::Vector2d &test_coord) const noexcept;
 
         /**
          * @brief Check if a coordinate is out of bounds
@@ -297,7 +296,7 @@ namespace easy_grid
          * @return true if out of bounds
          * @return false if in bounds 
         */
-        [[nodiscard]] bool outOfBound(Eigen::Vector2i &test_coord) const noexcept;
+        [[nodiscard]] bool outOfBound(const Eigen::Vector2i &test_coord) const noexcept;
 
         /**
          * @brief Check if a coordinate is out of bounds
@@ -305,7 +304,7 @@ namespace easy_grid
          * @return true if out of bounds
          * @return false if in bounds
          */
-        [[nodiscard]] bool outOfBound(size_t index) const noexcept;
+        [[nodiscard]] bool outOfBound(const size_t index) const noexcept;
 
         /**
          * @brief Check the sign of an arithmetic value
@@ -313,7 +312,7 @@ namespace easy_grid
          * @return int -1 if negative, 0 if zero, 1 if positive
          */
         template <typename ArithmeticT>
-        [[nodiscard]] int whatsign(ArithmeticT value);
+        [[nodiscard]] constexpr int whatsign(ArithmeticT value);
 
         /**
          * @brief Check if an arithmetic value is near 0 (0+ or 0-)
@@ -358,7 +357,7 @@ namespace easy_grid
          * @warning Out of bounds checks are not done, this is up to the user to use outOfBounds()
          * @see easy_grid::GridHandler::outOfBounds()
          */
-        std::array<Eigen::Vector2i,4> getCardinalNeighbors(Eigen::Vector2i &source_grid_coord);
+        std::array<Eigen::Vector2i,4> getCardinalNeighbors(const Eigen::Vector2i &source_grid_coord);
 
         /**
          * @brief Compute and return the octile neighbors
@@ -367,7 +366,7 @@ namespace easy_grid
          * @warning Out of bounds checks are not done, this is up to the user to use outOfBounds()
          * @see easy_grid::GridHandler::outOfBounds()
          */
-        std::array<Eigen::Vector2i,8> getOctileNeighbors(Eigen::Vector2i &source_grid_coord);
+        std::array<Eigen::Vector2i,8> getOctileNeighbors(const Eigen::Vector2i &source_grid_coord);
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////DEFINITION/////////////////////////////////////////////////////
@@ -381,7 +380,7 @@ namespace easy_grid
          * @warning No bounds checking, bounds overflow will throw
          * @warning Cell will be mutable
          */
-        CellT& getCell(size_t index);
+        CellT& getCell(const size_t index);
         
         /**
          * @brief Access the grid as a Cell<T>&
@@ -390,7 +389,7 @@ namespace easy_grid
          * @warning No bounds checking, bounds overflow will throw
          * @warning Cell will be mutable
          */
-        CellT& getCell(Eigen::Vector2i &grid_coord);
+        CellT& getCell(const Eigen::Vector2i &grid_coord);
 
         /**
          * @brief Access the grid as a Cell<T>&
@@ -399,7 +398,7 @@ namespace easy_grid
          * @warning No bounds checking, bounds overflow will throw
          * @warning Cell will be mutable
          */
-        CellT& getCell(Eigen::Vector2d &parent_coord);
+        CellT& getCell(const Eigen::Vector2d &parent_coord);
 
         /**
          * @brief Get values of cells.
@@ -415,7 +414,7 @@ namespace easy_grid
          * @param cell
          * @warning No bounds checking, bounds overflow will throw
          */
-        void setCell(size_t index, const CellT &cell);
+        void setCell(const size_t index, const CellT &cell);
 
         /**
          * @brief Set the value of a cell
@@ -423,7 +422,7 @@ namespace easy_grid
          * @param cell
          * @warning No bounds checking, bounds overflow will throw
          */
-        void setCell(Eigen::Vector2i &grid_coord, const CellT &cell);
+        void setCell(const Eigen::Vector2i &grid_coord, const CellT &cell);
 
         /**
          * @brief Set the value of a cell
@@ -431,14 +430,14 @@ namespace easy_grid
          * @param CellT cell
          * @warning No bounds checking, bounds overflow will throw
          */
-        void setCell(Eigen::Vector2d &parent_coord, const CellT &cell);
+        void setCell(const Eigen::Vector2d &parent_coord, const CellT &cell);
 
         /**
          * @brief Set cells with values.
          * @param indices Indices of cells to set.
          * @param values Values to set, must be same size as indices.
          */
-        void setCells(const std::vector<size_t>& indices, const std::vector<CellT> values);
+        void setCells(const std::vector<size_t>& indices, const std::vector<CellT> &values);
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////DEFINITION/////////////////////////////////////////////////////
@@ -623,6 +622,7 @@ namespace easy_grid
         : meta_(meta)
         {
             //Default Populate
+            grid_cells_.reserve(meta_.map_width * meta_.map_height);
             grid_cells_.assign(meta_.map_width * meta_.map_height,CellT());
             
         }
@@ -655,6 +655,7 @@ namespace easy_grid
         template <class CellT>
         GridHandler<CellT>& GridHandler<CellT>::operator=(GridHandler &&other_grid)
         {
+            if (this == &other_grid){return *this;}
             meta_ = other_grid.meta_;
             grid_cells_ = std::move(other_grid.grid_cells_);
             return *this;
@@ -677,7 +678,6 @@ namespace easy_grid
             if (metadata_total_size != grid_cells.size())
             {
                 throw std::runtime_error("GridHandler::setGrid: Invalid number of cells provided");
-                return;
             }
             // Move the grid
             grid_cells_ = std::move(grid_cells);
@@ -692,19 +692,14 @@ namespace easy_grid
         }
 
         template <class CellT>
-        GridHandler<CellT> GridHandler<CellT>::cloneGrid(GridHandler &other_grid)
+        GridHandler<CellT> GridHandler<CellT>::cloneGrid()
         {
-            size_t TOTAL_CELLS = other_grid.meta_.map_height * other_grid.meta_.map_width;
-            std::vector<CellT> copy_cells;
-            copy_cells.reserve(TOTAL_CELLS);
-            other_grid.forEachCellDo([this,&copy_cells,&other_grid](Eigen::Vector2i &grid_coord)
-                                     {
-                                        CellT cell2copy = other_grid.getCell(grid_coord);
-                                        copy_cells.push_back(cell2copy);
-                                     });
+            size_t TOTAL_CELLS = this->getTotalCells();
+            std::vector<CellT> underlying;
+            underlying.reserve(TOTAL_CELLS);
             
-            GridHandler grid2return(other_grid.meta_,copy_cells);
-            return grid2return;
+            GridHandler cloned_grid(this->meta_,underlying);
+            return cloned_grid;
         }
 
         template <class CellT>
@@ -824,6 +819,10 @@ namespace easy_grid
         
         size_t width = getWidth();
 
+        if (u < 0 | v < 0){
+            throw std::runtime_error("GridToIndex failed because either grid coordinate component is negative. Do bounds checking before conversion!");
+        }
+
         return static_cast<size_t>(v) * width + static_cast<size_t>(u);
     }
 
@@ -843,14 +842,14 @@ namespace easy_grid
     /////////////////////////////////////////COMMON CHECK METHODS///////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     template <class CellT>
-    bool GridHandler<CellT>::outOfBound(Eigen::Vector2d &test_coord) const noexcept
+    bool GridHandler<CellT>::outOfBound(const Eigen::Vector2d &test_coord) const noexcept
     {
         Eigen::Vector2i test_coord_int = this->parentToGrid(test_coord);
         return this->outOfBound(test_coord_int);
     }
 
     template <class CellT>
-    bool GridHandler<CellT>::outOfBound(Eigen::Vector2i &test_coord) const noexcept
+    bool GridHandler<CellT>::outOfBound(const Eigen::Vector2i &test_coord) const noexcept
     {   
         //Number of cells along the width
         const int W = static_cast<int>(getWidth());
@@ -863,7 +862,7 @@ namespace easy_grid
     }
 
     template <class CellT>
-    bool GridHandler<CellT>::outOfBound(size_t index) const noexcept
+    bool GridHandler<CellT>::outOfBound(const size_t index) const noexcept
     {
         const size_t total = static_cast<size_t>(getWidth()) * static_cast<size_t>(getHeight());
 
@@ -872,7 +871,7 @@ namespace easy_grid
 
     template <class CellT>
     template <class ArithmeticT>
-    int GridHandler<CellT>::whatsign(ArithmeticT value) 
+    constexpr int GridHandler<CellT>::whatsign(ArithmeticT value) 
     {
         static_assert(std::is_arithmetic<ArithmeticT>::value, "whatsign requires arithmetic type.");
         
@@ -962,7 +961,7 @@ namespace easy_grid
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     template <class CellT>
-    std::array<Eigen::Vector2i,4> GridHandler<CellT>::getCardinalNeighbors(Eigen::Vector2i &source_grid_coord)
+    std::array<Eigen::Vector2i,4> GridHandler<CellT>::getCardinalNeighbors(const Eigen::Vector2i &source_grid_coord)
     {
         std::array<Eigen::Vector2i,4> neighbors;
         for (size_t i = 0 ; i < 4 ; ++i)
@@ -973,7 +972,7 @@ namespace easy_grid
     }
 
     template <class CellT>
-    std::array<Eigen::Vector2i,8> GridHandler<CellT>::getOctileNeighbors(Eigen::Vector2i &source_grid_coord)
+    std::array<Eigen::Vector2i,8> GridHandler<CellT>::getOctileNeighbors(const Eigen::Vector2i &source_grid_coord)
     {
         std::array<Eigen::Vector2i,8> neighbors;
         for (size_t i = 0 ; i < 8 ; ++i)
@@ -989,20 +988,20 @@ namespace easy_grid
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     template <class CellT>
-    CellT& GridHandler<CellT>::getCell(size_t index)
+    CellT& GridHandler<CellT>::getCell(const size_t index)
     {
         return grid_cells_.at(index);
     }
 
     template <class CellT>
-    CellT& GridHandler<CellT>::getCell(Eigen::Vector2i &grid_coord)
+    CellT& GridHandler<CellT>::getCell(const Eigen::Vector2i &grid_coord)
     {
         size_t index = this->gridToIndex(grid_coord);
         return getCell(index);
     }
 
     template <class CellT>
-    CellT& GridHandler<CellT>::getCell(Eigen::Vector2d &parent_coord)
+    CellT& GridHandler<CellT>::getCell(const Eigen::Vector2d &parent_coord)
     {
         Eigen::Vector2i grid_coord = this->parentToGrid(parent_coord);
         
@@ -1025,27 +1024,27 @@ namespace easy_grid
     }
 
     template <class CellT>
-    void GridHandler<CellT>::setCell(size_t index, const CellT &cell)
+    void GridHandler<CellT>::setCell(const size_t index, const CellT &cell)
     {
         grid_cells_.at(index) = cell;
     }
 
     template <class CellT>
-    void GridHandler<CellT>::setCell(Eigen::Vector2i &grid_coord, const CellT &cell)
+    void GridHandler<CellT>::setCell(const Eigen::Vector2i &grid_coord, const CellT &cell)
     {
         size_t index = this->gridToIndex(grid_coord);
         setCell(index, cell);
     }
 
     template <class CellT>
-    void GridHandler<CellT>::setCell(Eigen::Vector2d &parent_coord, const CellT &cell)
+    void GridHandler<CellT>::setCell(const Eigen::Vector2d &parent_coord, const CellT &cell)
     {
         Eigen::Vector2i grid_coord = this->parentToGrid(parent_coord);
         setCell(grid_coord, cell);
     }
 
     template<class CellT>
-    inline void GridHandler<CellT>::setCells(const std::vector<size_t>& indices, const std::vector<CellT> values)
+    inline void GridHandler<CellT>::setCells(const std::vector<size_t>& indices, const std::vector<CellT>& values)
     {
         if (indices.size() != values.size())
         {
@@ -1294,7 +1293,7 @@ namespace easy_grid
                             Eigen::Vector2i diff = pt - center_grid;
                             //Compute the squared euc distance in cell coordinate
                             int dist_sq = diff.x() * diff.x() + diff.y() * diff.y();
-                            if (dist_sq < radius_sq)
+                            if (dist_sq <= radius_sq)
                             {
                                 //If its less than or equal to the radius diff, its inside the circle
                                 //So we can apply the visitor func
