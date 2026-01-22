@@ -28,12 +28,20 @@ target_link_libraries(easy_grid_core INTERFACE
 # ----------------------------
 # Install
 # ----------------------------
+# Install headers
 install(DIRECTORY include/
   DESTINATION include
 )
 
+# Install target + export
 install(TARGETS easy_grid_core
   EXPORT export_easy_grid_core
+)
+
+# Install CMake export files 
+install(
+  EXPORT export_easy_grid_core
+  DESTINATION share/${PROJECT_NAME}/cmake
 )
 
 # ----------------------------
