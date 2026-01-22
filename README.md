@@ -1,4 +1,4 @@
-![ROS 2 Jazzy CI](https://github.com/mukundbala/EasyGrid/actions/workflows/ros2_ci_.yml/badge.svg?branch=main)
+![ROS 2 Jazzy CI](https://github.com/mukundbala/EasyGrid/actions/workflows/ros2_ci.yml/badge.svg?branch=main)
 # EasyGrid
 ![EasyGrid Logo](docs/EasyGrid.png)
 **A lightweight, header-only C++ library for managing 2D grids. Great for building occupancy, cost, or traversability maps for robotics applications in a single data structure!** 
