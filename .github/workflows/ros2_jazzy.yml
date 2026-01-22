@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           rosdep install \
-            --from-paths ws/src/EasyGrid \
+            --from-paths . \
             --ignore-src \
             --rosdistro jazzy \
             -y
@@ -42,7 +42,6 @@ jobs:
         shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
-          cd ws
           colcon build \
             --packages-up-to easy_grid \
             --cmake-args -DBUILD_TESTING=ON
@@ -51,7 +50,6 @@ jobs:
         shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
-          cd ws
           source install/setup.bash
           colcon test \
             --packages-select easy_grid_core \
